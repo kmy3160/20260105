@@ -3,127 +3,984 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Today Todo</title>
+  <title>Today Todo • App</title>
+  <meta name="color-scheme" content="dark light" />
   <style>
     :root{
-      --bg1:#0ea5e9;
-      --bg2:#8b5cf6;
-      --card: rgba(255,255,255,.12);
-      --card2: rgba(255,255,255,.18);
+      /* ===== Base palette ===== */
+      --bg-a:#0ea5e9;
+      --bg-b:#8b5cf6;
+
+      --glass: rgba(255,255,255,.10);
+      --glass-2: rgba(255,255,255,.14);
+      --border: rgba(255,255,255,.18);
+
       --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.72);
-      --line: rgba(255,255,255,.18);
-      --shadow: 0 20px 60px rgba(0,0,0,.25);
-      --radius: 18px;
+      --muted: rgba(255,255,255,.70);
+      --muted-2: rgba(255,255,255,.55);
+
+      --primary: #60a5fa;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger:  #fb7185;
+
+      --radius: 22px;
+      --shadow: 0 26px 80px rgba(0,0,0,.34);
+      --shadow-soft: 0 12px 30px rgba(0,0,0,.22);
+      --focus: 0 0 0 4px rgba(96,165,250,.30);
+
+      /* ===== App size ===== */
+      --app-max: 1020px;
     }
+
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+
+    /* ===== Dynamic background modes (앱처럼 보이게 + 상태색 전환) ===== */
     body{
       margin:0;
-      min-height:100vh;
       font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
                    "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(1200px 700px at 10% 10%, rgba(255,255,255,.25), transparent 60%),
-        radial-gradient(1000px 600px at 90% 20%, rgba(255,255,255,.18), transparent 55%),
-        linear-gradient(135deg, var(--bg1), var(--bg2));
       display:flex;
       align-items:center;
       justify-content:center;
-      padding: 28px;
+      padding: 26px;
+      overflow-x:hidden;
+      transition: background .35s ease, filter .35s ease;
+      background:
+        radial-gradient(1100px 800px at 12% 12%, rgba(255,255,255,.22), transparent 60%),
+        radial-gradient(900px 700px at 92% 20%, rgba(255,255,255,.16), transparent 55%),
+        radial-gradient(900px 700px at 70% 110%, rgba(255,255,255,.12), transparent 55%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b));
     }
-    .app{
-      width:min(820px, 100%);
-      display:grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 18px;
+
+    /* 기본(중립) */
+    body[data-mood="neutral"]{
+      background:
+        radial-gradient(1100px 800px at 12% 12%, rgba(255,255,255,.22), transparent 60%),
+        radial-gradient(900px 700px at 92% 20%, rgba(255,255,255,.16), transparent 55%),
+        radial-gradient(900px 700px at 70% 110%, rgba(255,255,255,.12), transparent 55%),
+        linear-gradient(135deg, #0ea5e9, #8b5cf6);
     }
-    @media (max-width: 860px){
-      .app{ grid-template-columns: 1fr; }
+
+    /* 바른자세 50%↑ : 더 밝고 상쾌한 느낌 */
+    body[data-mood="good"]{
+      background:
+        radial-gradient(1200px 900px at 10% 10%, rgba(255,255,255,.38), transparent 62%),
+        radial-gradient(900px 700px at 90% 18%, rgba(255,255,255,.24), transparent 56%),
+        radial-gradient(900px 700px at 60% 110%, rgba(255,255,255,.20), transparent 55%),
+        linear-gradient(135deg, #22c55e, #60a5fa);
+      filter: saturate(1.06) brightness(1.06);
     }
-    .card{
-      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.08));
-      border: 1px solid var(--line);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
+
+    /* 안좋은자세 50%↑ : 경고(붉/주황) 느낌 */
+    body[data-mood="warn"]{
+      background:
+        radial-gradient(1200px 900px at 10% 10%, rgba(255,255,255,.20), transparent 62%),
+        radial-gradient(900px 700px at 90% 18%, rgba(255,255,255,.14), transparent 56%),
+        radial-gradient(900px 700px at 60% 110%, rgba(255,255,255,.10), transparent 55%),
+        linear-gradient(135deg, #fb7185, #fbbf24);
+      filter: saturate(1.10) brightness(1.02);
     }
-    .header{
-      padding: 22px 22px 14px 22px;
-      border-bottom: 1px solid var(--line);
+
+    /* subtle pattern */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background-image: radial-gradient(rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 22px 22px;
+      opacity:.35;
+      pointer-events:none;
+      mix-blend-mode: overlay;
+    }
+
+    /* ===== Top system bar (앱처럼) ===== */
+    .shell{
+      width: min(var(--app-max), 100%);
       display:flex;
-      align-items:flex-start;
+      flex-direction:column;
+      gap: 14px;
+      position:relative;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
       justify-content:space-between;
       gap: 10px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 18px 50px rgba(0,0,0,.26);
     }
-    .title{
-      margin:0;
-      font-size: 20px;
-      letter-spacing: -0.2px;
+
+    .top-left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
     }
-    .subtitle{
-      margin:6px 0 0 0;
-      font-size: 13px;
-      color: var(--muted);
+
+    .appmark{
+      width: 36px; height: 36px;
+      border-radius: 14px;
+      background:
+        radial-gradient(16px 16px at 30% 30%, rgba(255,255,255,.45), transparent 55%),
+        linear-gradient(135deg, rgba(96,165,250,.95), rgba(167,139,250,.95));
+      border: 1px solid rgba(255,255,255,.18);
+      box-shadow: 0 12px 24px rgba(0,0,0,.18);
+      flex: 0 0 auto;
     }
+
+    .appname{
+      display:flex;
+      flex-direction:column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .appname b{
+      font-size: 14px;
+      letter-spacing: -.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .appname span{
+      font-size: 12px;
+      color: rgba(255,255,255,.68);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .top-right{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
     .pill{
       user-select:none;
       padding: 8px 10px;
       border-radius: 999px;
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
       font-size: 12px;
       color: rgba(255,255,255,.86);
+      display:flex;
+      align-items:center;
+      gap: 8px;
       white-space:nowrap;
     }
-    .content{
-      padding: 18px 22px 22px 22px;
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: var(--success);
+      box-shadow: 0 0 0 3px rgba(52,211,153,.18);
     }
-    .row{
+
+    /* ===== Main app grid ===== */
+    .app{
+      width: 100%;
+      display:grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 16px;
+    }
+    @media (max-width: 920px){
+      .app{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.06));
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow:hidden;
+    }
+
+    .panel__header{
+      padding: 16px 18px 12px 18px;
+      border-bottom: 1px solid rgba(255,255,255,.16);
       display:flex;
-      gap: 10px;
-      align-items:center;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
     }
+
+    .title{
+      margin:0;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+      line-height:1.2;
+    }
+    .subtitle{
+      margin:6px 0 0 0;
+      font-size: 12.5px;
+      color: rgba(255,255,255,.70);
+    }
+
+    .panel__content{ padding: 14px 18px 18px 18px; }
+
+    /* ===== Composer ===== */
+    .composer{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.14);
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    }
+    @media (max-width: 520px){
+      .composer{ grid-template-columns: 1fr; }
+    }
+
+    .field{ display:flex; flex-direction:column; gap: 8px; }
+    .label{ font-size: 12px; color: rgba(255,255,255,.70); padding-left: 4px; }
+
     .input{
-      flex:1;
-      height: 44px;
+      height: 46px;
       padding: 0 14px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.22);
-      background: rgba(255,255,255,.12);
-      color: var(--text);
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.92);
       outline:none;
       font-size: 14px;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
     }
-    .input::placeholder{ color: rgba(255,255,255,.62); }
+    .input::placeholder{ color: rgba(255,255,255,.52); }
+    .input:focus{
+      border-color: rgba(96,165,250,.55);
+      box-shadow: var(--focus);
+      transform: translateY(-1px);
+    }
+
     .btn{
-      height: 44px;
+      height: 46px;
       padding: 0 16px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.22);
-      background: linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,.10));
-      color: var(--text);
+      border: 1px solid rgba(255,255,255,.18);
+      background:
+        radial-gradient(18px 18px at 30% 30%, rgba(255,255,255,.35), transparent 55%),
+        linear-gradient(135deg, rgba(96,165,250,.75), rgba(167,139,250,.55));
+      color: rgba(255,255,255,.92);
       cursor:pointer;
-      font-weight: 600;
+      font-weight: 800;
+      letter-spacing: -.2px;
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+      box-shadow: 0 10px 22px rgba(0,0,0,.18);
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.03); }
+    .btn:active{ transform: translateY(0px) scale(.99); }
+    .btn:focus{ outline:none; box-shadow: var(--focus), 0 10px 22px rgba(0,0,0,.18); }
+
+    /* ===== Sections & List ===== */
+    .sections{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .section{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.12);
+      overflow:hidden;
+    }
+
+    .section__head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+
+    .section__title{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-size: 13px;
+      color: rgba(255,255,255,.86);
+      font-weight: 900;
+      letter-spacing: -.2px;
+      margin:0;
+    }
+
+    .badge{
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.82);
+      min-width: 42px;
+      text-align:center;
+    }
+
+    .list{
+      list-style:none;
+      margin:0;
+      padding: 10px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+
+    .item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 10px 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .item:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,255,255,.18);
+    }
+
+    .left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .check{
+      width: 18px; height: 18px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,.24);
+      background: rgba(0,0,0,.18);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+    }
+    .check svg{ opacity: 0; transform: scale(.9); transition: .12s ease; }
+
+    .text{
+      font-size: 14px;
+      color: rgba(255,255,255,.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .meta{
+      font-size: 12px;
+      color: rgba(255,255,255,.55);
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    .tiny-btn{
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.16);
+      color: rgba(255,255,255,.86);
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-size: 12px;
+      transition: transform .12s ease, filter .12s ease;
+      white-space:nowrap;
+    }
+    .tiny-btn:hover{ transform: translateY(-1px); filter: brightness(1.04); }
+    .tiny-btn:active{ transform: translateY(0); }
+
+    .empty{
+      padding: 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,.70);
+    }
+
+    .item[data-done="true"]{
+      background: rgba(52,211,153,.08);
+      border-color: rgba(52,211,153,.22);
+    }
+    .item[data-done="true"] .check{
+      background: rgba(52,211,153,.18);
+      border-color: rgba(52,211,153,.32);
+    }
+    .item[data-done="true"] .check svg{
+      opacity: 1;
+      transform: scale(1);
+    }
+    .item[data-done="true"] .text{
+      color: rgba(255,255,255,.75);
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(255,255,255,.35);
+    }
+
+    /* ===== Right side summary ===== */
+    .summary{
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+    }
+
+    .stat-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.12);
+      padding: 14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .stat::before{
+      content:"";
+      position:absolute; inset:-40% -30%;
+      background: radial-gradient(closest-side, rgba(96,165,250,.22), transparent 70%);
+      transform: rotate(18deg);
+      pointer-events:none;
+    }
+    .stat .k{ font-size: 12px; color: rgba(255,255,255,.70); position:relative; }
+    .stat .v{ font-size: 22px; font-weight: 950; letter-spacing:-.6px; margin-top: 6px; position:relative; }
+
+    .hint{
+      margin:0;
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+      line-height:1.55;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px dashed rgba(255,255,255,.22);
+      background: rgba(0,0,0,.08);
+    }
+
+    .footer-actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
+    /* ===== Posture control (바른자세/안좋은자세) ===== */
+    .posture-card{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.12);
+      padding: 14px;
+    }
+    .posture-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .posture-head b{
+      font-size: 13px;
+      letter-spacing:-.2px;
+    }
+    .posture-head span{
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+    }
+
+    .slider-row{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+    .slider-labels{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+    }
+    .range{
+      width: 100%;
+      accent-color: #60a5fa;
+    }
+
+    .bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.14);
+      overflow:hidden;
+      position:relative;
+    }
+    .bar > i{
+      display:block;
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, rgba(52,211,153,.85), rgba(96,165,250,.75));
+      border-right: 1px solid rgba(255,255,255,.25);
+    }
+
+    .posture-bad{
+      margin-top: 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,.72);
+    }
+
+    .status-tag{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.86);
+      font-weight: 800;
+      white-space:nowrap;
+    }
+    .status-tag.good{
+      border-color: rgba(52,211,153,.28);
+      background: rgba(52,211,153,.10);
+    }
+    .status-tag.warn{
+      border-color: rgba(251,113,133,.34);
+      background: rgba(251,113,133,.10);
+    }
+    .status-tag.neutral{
+      border-color: rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+    }
+
+    /* toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.45);
+      border: 1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
     }
   </style>
 </head>
-<body>
-  <main class="app">
-    <section class="card">
-      <div class="header">
-        <div>
-          <h1 class="title">오늘의 할 일</h1>
-          <p class="subtitle">한 번에 한 가지, 확실하게 끝내기.</p>
+<body data-mood="neutral">
+  <div class="shell">
+    <!-- App-like top bar -->
+    <header class="topbar" aria-label="앱 상단 바">
+      <div class="top-left">
+        <div class="appmark" aria-hidden="true"></div>
+        <div class="appname">
+          <b>Today Todo</b>
+          <span id="todayText">—</span>
         </div>
-        <div class="pill">Todo App</div>
       </div>
-      <div class="content">
-        <input class="input" placeholder="할 일을 입력하세요" />
+      <div class="top-right">
+        <div class="pill" title="저장: 브라우저 로컬">
+          <span class="dot" aria-hidden="true"></span>
+          <span>Auto Save</span>
+        </div>
+        <div id="moodPill" class="pill" title="자세 상태에 따라 배경색이 바뀝니다">
+          <span aria-hidden="true">🧍</span>
+          <span id="moodText">중립</span>
+        </div>
       </div>
-    </section>
-  </main>
+    </header>
+
+    <main class="app" aria-label="Today Todo App">
+      <!-- Left: Main -->
+      <section class="panel" aria-label="할 일 관리 패널">
+        <div class="panel__header">
+          <div>
+            <h1 class="title">오늘의 할 일</h1>
+            <p class="subtitle">Enter로 추가 · 클릭(체크)으로 완료 이동 · 더블클릭으로 삭제</p>
+          </div>
+          <div class="pill" title="가벼운 앱 UI">
+            <span aria-hidden="true">✨</span>
+            <span>App UI</span>
+          </div>
+        </div>
+
+        <div class="panel__content">
+          <div class="composer" role="group" aria-label="할 일 입력">
+            <div class="field">
+              <div class="label">할 일</div>
+              <input id="todoInput" class="input" placeholder="예: 수업 자료 3쪽 수정하기" maxlength="80" />
+            </div>
+            <button id="addBtn" class="btn" type="button">추가</button>
+          </div>
+
+          <div class="sections">
+            <div class="section" aria-label="진행 중">
+              <div class="section__head">
+                <p class="section__title"><span aria-hidden="true">🟦</span> 진행 중</p>
+                <span id="countActive" class="badge">0</span>
+              </div>
+              <ul id="activeList" class="list"></ul>
+              <div id="activeEmpty" class="empty">아직 할 일이 없습니다. 한 가지를 추가해보세요.</div>
+            </div>
+
+            <div class="section" aria-label="완료">
+              <div class="section__head">
+                <p class="section__title"><span aria-hidden="true">✅</span> 완료</p>
+                <span id="countDone" class="badge">0</span>
+              </div>
+              <ul id="doneList" class="list"></ul>
+              <div id="doneEmpty" class="empty">완료 항목이 여기에 쌓입니다. (더블클릭하면 삭제)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Summary + Posture -->
+      <aside class="panel summary" aria-label="요약 및 자세 패널">
+        <div class="panel__header">
+          <div>
+            <h2 class="title">오늘의 요약</h2>
+            <p class="subtitle">할 일 상태와 “자세 비율”을 함께 확인합니다.</p>
+          </div>
+          <div class="pill" title="빠른 정리">
+            <span aria-hidden="true">🧹</span>
+            <span>Quick</span>
+          </div>
+        </div>
+
+        <div class="panel__content">
+          <div class="stat-grid" aria-label="통계">
+            <div class="stat">
+              <div class="k">전체</div>
+              <div id="statTotal" class="v">0</div>
+            </div>
+            <div class="stat">
+              <div class="k">진행률</div>
+              <div id="statRate" class="v">0%</div>
+            </div>
+          </div>
+
+          <!-- Posture controller -->
+          <div class="posture-card" aria-label="자세 상태(시뮬레이션)">
+            <div class="posture-head">
+              <b>자세 상태</b>
+              <span>바른자세가 50%↑면 밝게 · 안좋은자세 50%↑면 경고</span>
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-labels">
+                <span>바른자세</span>
+                <b id="goodPct">50%</b>
+              </div>
+              <input id="goodRange" class="range" type="range" min="0" max="100" value="50" />
+              <div class="bar" aria-hidden="true">
+                <i id="goodBar" style="width:50%"></i>
+              </div>
+
+              <div class="posture-bad">
+                <span>안좋은자세</span>
+                <b id="badPct">50%</b>
+                <span id="statusTag" class="status-tag neutral">중립</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint">
+            • 바른자세 ≥ 50% → 배경이 “밝은(좋음)” 상태로 전환<br/>
+            • 안좋은자세 ≥ 50% → 배경이 “경고(주의)” 상태로 전환<br/>
+            • 정확히 50:50은 중립으로 처리
+          </p>
+
+          <div class="footer-actions">
+            <button id="clearDoneBtn" class="tiny-btn" type="button">완료 비우기</button>
+            <button id="clearAllBtn" class="tiny-btn" type="button">전체 초기화</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+
+    // ===== Date in top bar =====
+    const todayText = $("#todayText");
+    (function setToday(){
+      const d = new Date();
+      const w = ["일","월","화","수","목","금","토"][d.getDay()];
+      todayText.textContent = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} (${w})`;
+    })();
+
+    // ===== Todo app =====
+    const todoInput = $("#todoInput");
+    const addBtn = $("#addBtn");
+
+    const activeList = $("#activeList");
+    const doneList = $("#doneList");
+
+    const activeEmpty = $("#activeEmpty");
+    const doneEmpty = $("#doneEmpty");
+
+    const countActive = $("#countActive");
+    const countDone = $("#countDone");
+
+    const statTotal = $("#statTotal");
+    const statRate = $("#statRate");
+
+    const clearDoneBtn = $("#clearDoneBtn");
+    const clearAllBtn = $("#clearAllBtn");
+
+    const toastEl = $("#toast");
+    const STORAGE_KEY = "todayTodo.v3";
+
+    let todos = [];
+
+    function uid(){
+      return Math.random().toString(16).slice(2) + Date.now().toString(16);
+    }
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    }
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return;
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) todos = parsed;
+      }catch(e){}
+    }
+    function showToast(msg){
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toastEl.classList.remove("show"), 1400);
+    }
+    function formatTime(ts){
+      const d = new Date(ts);
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mm = String(d.getMinutes()).padStart(2,"0");
+      return `${hh}:${mm}`;
+    }
+
+    function render(){
+      activeList.innerHTML = "";
+      doneList.innerHTML = "";
+
+      const active = todos.filter(t => !t.done);
+      const done = todos.filter(t => t.done);
+
+      countActive.textContent = active.length;
+      countDone.textContent = done.length;
+
+      const total = todos.length;
+      const rate = total ? Math.round((done.length / total) * 100) : 0;
+      statTotal.textContent = total;
+      statRate.textContent = `${rate}%`;
+
+      activeEmpty.style.display = active.length ? "none" : "block";
+      doneEmpty.style.display = done.length ? "none" : "block";
+
+      for(const t of active) activeList.appendChild(makeItem(t));
+      for(const t of done) doneList.appendChild(makeItem(t));
+    }
+
+    function makeItem(todo){
+      const li = document.createElement("li");
+      li.className = "item";
+      li.dataset.id = todo.id;
+      li.dataset.done = String(todo.done);
+
+      const left = document.createElement("div");
+      left.className = "left";
+
+      const check = document.createElement("div");
+      check.className = "check";
+      check.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 7L10 17l-5-5" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      `;
+
+      const text = document.createElement("div");
+      text.className = "text";
+      text.textContent = todo.text;
+
+      left.appendChild(check);
+      left.appendChild(text);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<span title="생성 시각">${formatTime(todo.createdAt)}</span>`;
+
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "tiny-btn";
+      delBtn.textContent = "삭제";
+      delBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeTodo(todo.id);
+      });
+
+      li.appendChild(left);
+      li.appendChild(meta);
+      li.appendChild(delBtn);
+
+      li.addEventListener("click", () => toggleDone(todo.id));
+      li.addEventListener("dblclick", () => removeTodo(todo.id));
+
+      return li;
+    }
+
+    function addTodo(){
+      const text = todoInput.value.trim();
+      if(!text){
+        showToast("할 일을 입력해 주세요.");
+        todoInput.focus();
+        return;
+      }
+      todos.unshift({ id: uid(), text, done:false, createdAt: Date.now() });
+      todoInput.value = "";
+      save();
+      render();
+      showToast("추가했습니다.");
+      todoInput.focus();
+    }
+
+    function toggleDone(id){
+      const idx = todos.findIndex(t => t.id === id);
+      if(idx < 0) return;
+      todos[idx].done = !todos[idx].done;
+      save();
+      render();
+      showToast(todos[idx].done ? "완료로 이동!" : "진행 중으로 이동!");
+    }
+
+    function removeTodo(id){
+      const before = todos.length;
+      todos = todos.filter(t => t.id !== id);
+      if(todos.length !== before){
+        save();
+        render();
+        showToast("삭제했습니다.");
+      }
+    }
+
+    function clearDone(){
+      const before = todos.length;
+      todos = todos.filter(t => !t.done);
+      if(todos.length !== before){
+        save();
+        render();
+        showToast("완료 항목을 비웠습니다.");
+      }else{
+        showToast("비울 완료 항목이 없습니다.");
+      }
+    }
+
+    function clearAll(){
+      if(!todos.length){
+        showToast("이미 비어 있습니다.");
+        return;
+      }
+      todos = [];
+      save();
+      render();
+      showToast("전체를 초기화했습니다.");
+    }
+
+    addBtn.addEventListener("click", addTodo);
+    todoInput.addEventListener("keydown", (e) => {
+      if(e.key === "Enter") addTodo();
+    });
+
+    clearDoneBtn.addEventListener("click", clearDone);
+    clearAllBtn.addEventListener("click", clearAll);
+
+    // init todo
+    load();
+    render();
+    todoInput.focus();
+
+    // ===== Posture (simulate) : 바른자세/안좋은자세 비율로 배경 변경 =====
+    const goodRange = $("#goodRange");
+    const goodPct = $("#goodPct");
+    const badPct = $("#badPct");
+    const goodBar = $("#goodBar");
+
+    const moodText = $("#moodText");
+    const statusTag = $("#statusTag");
+
+    function setMood(mood){
+      document.body.dataset.mood = mood;
+
+      if(mood === "good"){
+        moodText.textContent = "좋음";
+        statusTag.textContent = "좋음";
+        statusTag.className = "status-tag good";
+      }else if(mood === "warn"){
+        moodText.textContent = "주의";
+        statusTag.textContent = "주의";
+        statusTag.className = "status-tag warn";
+      }else{
+        moodText.textContent = "중립";
+        statusTag.textContent = "중립";
+        statusTag.className = "status-tag neutral";
+      }
+    }
+
+    function updatePosture(){
+      const good = Number(goodRange.value);          // 바른자세 %
+      const bad = 100 - good;                        // 안좋은자세 %
+
+      goodPct.textContent = `${good}%`;
+      badPct.textContent = `${bad}%`;
+      goodBar.style.width = `${good}%`;
+
+      // 조건: 바른자세 50% 초과 -> 밝게 / 안좋은자세 50% 초과 -> 경고
+      // 정확히 50:50 -> 중립
+      if(good > 50){
+        setMood("good");
+      }else if(bad > 50){
+        setMood("warn");
+      }else{
+        setMood("neutral");
+      }
+    }
+
+    goodRange.addEventListener("input", updatePosture);
+
+    // init posture
+    setMood("neutral");
+    updatePosture();
+  </script>
 </body>
 </html>
