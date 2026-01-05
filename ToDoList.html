@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Today Todo</title>
+  <style>
+    :root{
+      --bg1:#0ea5e9;
+      --bg2:#8b5cf6;
+      --card: rgba(255,255,255,.12);
+      --card2: rgba(255,255,255,.18);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --line: rgba(255,255,255,.18);
+      --shadow: 0 20px 60px rgba(0,0,0,.25);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+                   "Apple SD Gothic Neo", "Noto Sans KR", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 10% 10%, rgba(255,255,255,.25), transparent 60%),
+        radial-gradient(1000px 600px at 90% 20%, rgba(255,255,255,.18), transparent 55%),
+        linear-gradient(135deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px;
+    }
+    .app{
+      width:min(820px, 100%);
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+    }
+    @media (max-width: 860px){
+      .app{ grid-template-columns: 1fr; }
+    }
+    .card{
+      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.08));
+      border: 1px solid var(--line);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .header{
+      padding: 22px 22px 14px 22px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .title{
+      margin:0;
+      font-size: 20px;
+      letter-spacing: -0.2px;
+    }
+    .subtitle{
+      margin:6px 0 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .pill{
+      user-select:none;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.18);
+      border: 1px solid rgba(255,255,255,.16);
+      font-size: 12px;
+      color: rgba(255,255,255,.86);
+      white-space:nowrap;
+    }
+    .content{
+      padding: 18px 22px 22px 22px;
+    }
+    .row{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .input{
+      flex:1;
+      height: 44px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.12);
+      color: var(--text);
+      outline:none;
+      font-size: 14px;
+    }
+    .input::placeholder{ color: rgba(255,255,255,.62); }
+    .btn{
+      height: 44px;
+      padding: 0 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: linear-gradient(135deg, rgba(255,255,255,.24), rgba(255,255,255,.10));
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="card">
+      <div class="header">
+        <div>
+          <h1 class="title">오늘의 할 일</h1>
+          <p class="subtitle">한 번에 한 가지, 확실하게 끝내기.</p>
+        </div>
+        <div class="pill">Todo App</div>
+      </div>
+      <div class="content">
+        <input class="input" placeholder="할 일을 입력하세요" />
+      </div>
+    </section>
+  </main>
+</body>
+</html>
